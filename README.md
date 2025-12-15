@@ -1,59 +1,153 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+Multi-Tenant Project & Company Management System
+ وصف المشروع
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+هذا المشروع عبارة عن نظام إدارة شركات ومشاريع متعدد الشركات (Multi-Tenant)، حيث يمكن لكل شركة أن تحتوي على مشاريع متعددة، وكل مستخدم يمكن أن يكون عضوًا في أكثر من شركة بدور مختلف (Owner / Manager / Member).
 
-## About Laravel
+النظام يضمن:
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+صلاحيات دقيقة حسب دور المستخدم داخل الشركة وليس مجرد Admin أو لا.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+إدارة الشركات والمشاريع بطريقة مرنة.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+واجهة API جاهزة للعمل مع تطبيقات Frontend مثل React أو Flutter.
 
-## Learning Laravel
+الهيكلية الأساسية
+1
+ Models
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+User: يمثل المستخدم، يحتوي على Trait HasApiTokens لدعم Laravel Sanctum.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Company: يمثل الشركة، علاقة Many-to-Many مع المستخدمين عبر جدول company_user.
 
-## Laravel Sponsors
+Project: يمثل مشروع ضمن شركة، مرتبط بـ Company و Users (لتحديد المهام).
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+ Pivot Table
 
-### Premium Partners
+company_user:
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+user_id → المستخدم
 
-## Contributing
+company_id → الشركة
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+role → دور المستخدم داخل الشركة (owner, manager, member)
 
-## Code of Conduct
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Policies
+CompanyPolicy
 
-## Security Vulnerabilities
+view → كل عضو بالشركة يمكنه مشاهدة الشركة
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+create → أي مستخدم يمكنه إنشاء شركة جديدة
 
-## License
+update / delete → فقط Owner يمكنه تعديل أو حذف الشركة
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+ProjectPolicy
+
+create → Owner و Manager يمكنهم إنشاء مشاريع داخل الشركة
+
+update / delete → Owner و Manager يمكنهم تعديل أو حذف المشاريع
+
+view → Member يشاهد فقط المهام المخصصة له، Owner و Manager يشاهدون كل المشاريع
+
+ Services
+
+CrudService → Service أساسي يحتوي على وظائف CRUD عامة (create, read, update, delete).
+
+CompanyService → يدير شركات المستخدمين، يسمح بإنشاء الشركات، جلب المشاريع، حذف الشركات مع مشاريعها.
+
+ProjectService → يدير المشاريع، مرتبط بالشركة، يسمح بإدارة المشاريع حسب صلاحيات المستخدم.
+
+ Controllers
+
+CompanyController
+
+index → جلب الشركات للمستخدم الحالي
+
+store → إنشاء شركة جديدة
+
+show → عرض تفاصيل شركة
+
+update → تعديل الشركة (حسب Owner)
+
+destroy → حذف الشركة (حسب Owner)
+
+ProjectController
+
+index → جلب مشاريع الشركة حسب دور المستخدم
+
+store → إنشاء مشروع (Owner/Manager)
+
+show → عرض مشروع
+
+update → تعديل مشروع (Owner/Manager)
+
+destroy → حذف مشروع (Owner/Manager)
+
+جميع العمليات محمية باستخدام Policies + Authorization لضمان Multi-Tenant و صلاحيات دقيقة لكل دور.
+
+ Authentication
+
+يستخدم Laravel Sanctum لإنشاء API Tokens لكل مستخدم.
+
+Login/Register API endpoints جاهزة للعمل مع Frontend.
+
+كل عملية محمية باستخدام Guard sanctum.
+
+ Middlewares
+
+auth:sanctum → حماية كل Routes الخاصة بـ API
+
+Authorization يتم عبر Policies لكل Model (Company, Project).
+
+ قواعد البيانات
+
+users → جدول المستخدمين
+
+companies → جدول الشركات
+
+projects → جدول المشاريع
+
+company_user → pivot table للعلاقة Many-to-Many + دور المستخدم
+
+personal_access_tokens → جدول Laravel Sanctum لتخزين الـ API tokens
+
+ Packages & Tools Used
+
+Laravel 10+ → Framework الأساسي
+
+Laravel Sanctum → إدارة API Tokens و Authentication
+
+MySQL → قاعدة البيانات
+
+PHP 8+
+
+Postman → اختبار API endpoints
+
+1 مثال على Authorization Workflow
+
+عضو الشركة يحاول تعديل مشروع:
+
+Controller يستدعي: $this->authorize('update', $project);
+
+Policy ProjectPolicy تتحقق من الدور:
+
+Owner / Manager → يسمح
+
+Member → يمنع إلا إذا المشروع تابع له
+
+النتيجة → JSON response: success / forbidden
+
+1 تشغيل المشروع
+# تثبيت الحزم
+composer install
+
+# نسخ ملف البيئة
+cp .env.example .env
+
+# إعداد قاعدة البيانات في .env
+
+# تشغيل Migrations
+php artisan migrate
+
+# تشغيل السيرفر
+php artisan serve
